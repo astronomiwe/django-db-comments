@@ -1,5 +1,3 @@
-from psycopg2 import sql
-
 from django.apps import apps as global_apps
 from django.db import DEFAULT_DB_ALIAS, router, connections, transaction
 from django.conf import settings
@@ -19,9 +17,11 @@ ALLOWED_ENGINES = [
 
 # http://initd.org/psycopg/docs/sql.html
 # https://www.postgresql.org/docs/9.6/sql-comment.html
-POSTGRES_COMMENT_SQL = sql.SQL("COMMENT ON COLUMN {}.{} IS %s")
 
-POSTGRES_COMMENT_ON_TABLE_SQL = sql.SQL("COMMENT ON TABLE {} IS %s")
+
+POSTGRES_COMMENT_SQL = 'COMMENT ON COLUMN {}."{}" IS %s'
+
+POSTGRES_COMMENT_ON_TABLE_SQL = "COMMENT ON TABLE {} IS %s"
 
 
 def get_comments_for_model(model):
@@ -51,9 +51,7 @@ def add_column_comments_to_database(columns_comments, using=DEFAULT_DB_ALIAS):
             for table, columns in columns_comments.items():
 
                 for column, comment in columns.items():
-                    query = POSTGRES_COMMENT_SQL.format(
-                        sql.Identifier(table), sql.Identifier(column)
-                    )
+                    query = POSTGRES_COMMENT_SQL.format(table, column)
                     cursor.execute(query, [comment])
 
 
@@ -61,9 +59,7 @@ def add_table_comments_to_database(table_comment_dict, using=DEFAULT_DB_ALIAS):
     with connections[using].cursor() as cursor:
         with transaction.atomic():
             for table, comment in table_comment_dict.items():
-                query_for_table_comment = POSTGRES_COMMENT_ON_TABLE_SQL.format(
-                    sql.Identifier(table)
-                )
+                query_for_table_comment = POSTGRES_COMMENT_ON_TABLE_SQL.format(table)
                 cursor.execute(query_for_table_comment, [comment])
 
 
@@ -86,7 +82,7 @@ def copy_help_texts_to_database(
     interactive=True,
     using=DEFAULT_DB_ALIAS,
     apps=global_apps,
-    **kwargs
+    **kwargs,
 ):
     """
     Create content types for models in the given app.
